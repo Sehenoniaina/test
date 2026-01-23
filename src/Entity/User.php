@@ -2,14 +2,52 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
+use App\State\UserPasswordHasher;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\Groups as AttributeGroups;
+use Symfony\Component\Validator\Constraints as Assert;
 
+
+#[ApiResource(
+    operations: [
+        new GetCollection(
+            normalizationContext: ['groups' => 'user:list'],
+            name: "api_user_list"
+        ),
+        new Get(
+            normalizationContext: ['groups' => 'user:read'],
+            name: "api_user_read"
+        ),
+        new Post(
+            normalizationContext: ['groups' => 'user:read'],
+            denormalizationContext: ['groups' => 'user:create'],
+            name: "api_user_create",
+            processor: UserPasswordHasher::class
+        ),
+        new Patch(
+            normalizationContext: ['groups' => 'user:read'],
+            denormalizationContext: ['groups' => 'user:update'],
+            name: "api_user_update",
+            processor: UserPasswordHasher::class
+        ),
+        new Delete(
+            name: "api_user_delete"
+        )
+    ]
+)]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User extends BaseEntity implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -18,6 +56,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180)]
     private ?string $email = null;
+
+    #[Assert\NotBlank(groups: ['user:create'])]
+    private ?string $plainPassword = null;
 
     /**
      * @var list<string> The user roles
@@ -30,6 +71,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $name = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $firstName = null;
 
     public function getId(): ?int
     {
@@ -80,6 +127,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+      public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $plainPassword): self
+    {
+        $this->plainPassword = $plainPassword;
+
+        return $this;
+    }
+
     /**
      * @see PasswordAuthenticatedUserInterface
      */
@@ -110,5 +169,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // @deprecated, to be removed when upgrading to Symfony 8
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getFirstName(): ?string
+    {
+        return $this->firstName;
+    }
+
+    public function setFirstName(?string $firstName): static
+    {
+        $this->firstName = $firstName;
+
+        return $this;
     }
 }

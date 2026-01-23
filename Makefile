@@ -46,10 +46,10 @@ test: ## Start tests with phpunit, pass the parameter "c=" to add options to php
 	@$(DOCKER_COMP) exec -e APP_ENV=test php bin/phpunit $(c)
 
 install:
-	@$(DOCKER_COMP) exec php composer require $(filter-out $@,$(MAKECMDGOALS))
+	@$(DOCKER_COMP) exec php composer require $(filter-out $@,$(MAKECMDGOALS)) --no-interaction
 
 install-dev:
-	@$(DOCKER_COMP) exec php composer require --dev $(filter-out $@,$(MAKECMDGOALS))
+	@$(DOCKER_COMP) exec php composer require --dev $(filter-out $@,$(MAKECMDGOALS)) --no-interaction
 
 sf_core:  ## Run a Symfony core command, pass the command as a goal, example: make sf_core cache:clear
 	@$(DOCKER_COMP) exec php php bin/console $(filter-out $@,$(MAKECMDGOALS))
